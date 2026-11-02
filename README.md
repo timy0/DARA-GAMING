@@ -1,4 +1,4 @@
-# erronka1
+# erronka2
 #  DARA — Página Web de Videojuegos
 
 <img src="DARA_web4/DARA_web_actualizada2/images/logo.jpg" alt="DARA Logo" width="1000">
