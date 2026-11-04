@@ -83,21 +83,6 @@ create table pertenece (
 );
 
 -- ====================================================================
--- 9) compra (usuario <-> videojuego, relacion n:m con atributos)
--- guarda la fecha y el precio pagado (puede ser distinto al precio
--- actual del juego si hubo descuento)
--- ====================================================================
-create table compra (
- id_usuario int not null,
- id_videojuego int not null,
- fecha_compra date not null,
- precio_pagado decimal(6,2) not null check (precio_pagado >= 0),
- primary key (id_usuario, id_videojuego),
- foreign key (id_usuario) references usuario(id_usuario) on delete cascade,
- foreign key (id_videojuego) references videojuego(id_videojuego) on delete cascade
-);
-
--- ====================================================================
 -- 7) empleado
 -- personal de dara (segun el er, atiende a los usuarios registrados)
 -- ====================================================================
@@ -113,6 +98,8 @@ create table empleado (
 -- cada usuario registrado es atendido por un empleado (relacion
 -- "atiende" del er). dni_empleado puede quedar vacio si aun no se
 -- le ha asignado ninguno
+-- nota: en una aplicacion real la contraseña se guardaria como hash
+-- (bcrypt, argon2...), nunca en texto plano
 -- ====================================================================
 create table usuario (
  id_usuario int auto_increment primary key,
@@ -122,6 +109,22 @@ create table usuario (
  fecha_registro date not null default (current_date),
  dni_empleado varchar(9),
  foreign key (dni_empleado) references empleado(dni) on delete set null
+);
+
+-- ====================================================================
+-- 9) compra (usuario <-> videojuego, relacion n:m con atributos)
+-- guarda la fecha y el precio pagado (puede ser distinto al precio
+-- actual del juego si hubo descuento)
+-- (se crea despues de usuario y videojuego porque depende de ambas)
+-- ====================================================================
+create table compra (
+ id_usuario int not null,
+ id_videojuego int not null,
+ fecha_compra date not null,
+ precio_pagado decimal(6,2) not null check (precio_pagado >= 0),
+ primary key (id_usuario, id_videojuego),
+ foreign key (id_usuario) references usuario(id_usuario) on delete cascade,
+ foreign key (id_videojuego) references videojuego(id_videojuego) on delete cascade
 );
 
 -- ====================================================================
@@ -147,9 +150,11 @@ create table resena (
 
 -- ====================================================================
 -- DATOS DE EJEMPLO
+-- (se insertan respetando el orden de dependencias entre tablas)
 -- ====================================================================
 
 -- ----- plataformas (las que aparecen en la web) -----
+-- ids: 1 PS4, 2 PS5, 3 Xbox One, 4 Xbox Series X|S, 5 Switch, 6 PC
 INSERT INTO plataforma (nombre, fabricante, tipo) VALUES
   ('PS4','Sony','consola'),
   ('PS5','Sony','consola'),
@@ -195,7 +200,7 @@ insert into videojuego(titulo, fecha_lanzamiento, precio, descripcion, pegi, idi
  '18', 'Español', 4, 5),
 
 ('Doom Eternal', '2020-03-20', 9.89,
- 'Videojuego de disparos en primera persona ambientado en un universo horroroso, donde el Doom Slayer lucha gegen demonios y criaturas sobrenaturales.',
+ 'Videojuego de disparos en primera persona ambientado en un universo horroroso, donde el Doom Slayer lucha contra demonios y criaturas sobrenaturales.',
  '18', 'Español', 6, 7),
 
 ('Black Myth: Wukong', '2024-08-20', 59.99,
@@ -231,16 +236,17 @@ INSERT INTO pertenece (id_videojuego, id_genero) VALUES
  (9, 2); -- Elden Ring -> Aventura
 
 -- ----- plataformas disponibles para cada juego -----
+-- ids: 1 PS4, 2 PS5, 3 Xbox One, 4 Xbox Series X|S, 5 Switch, 6 PC
 INSERT INTO disponible (id_videojuego, id_plataforma) VALUES
- (1, 1), (1, 2), (1, 3),-- Uncharted 4 (PS4, PS5, PC)
- (2, 2), (2, 4),-- GTA 6 (PS5, Xbox Series X|S)
- (3, 2), (3, 4), (3, 3),-- Battlefield 6 (PS5, Xbox Series X|S, PC)
- (4, 2), (4, 4), (4, 5), (4, 3),-- Doom Eternal (PS5, Xbox Series X|S, Switch, PC)
- (5, 2), (5, 4), (5, 3),-- Black Myth: Wukong (PS5, Xbox Series X|S, PC)
- (6, 1), (6, 2), (6, 3), (6, 4), (6, 6),-- Call of Duty: MW II (PS4, PS5, PC, Xbox Series X|S, Xbox One)
- (7, 1), (7, 3), (7, 6),-- Red Dead Redemption 2 (PS4, PC, Xbox One)
- (8, 2), (8, 3), (8, 4),-- Dead Space (PS5, PC, Xbox Series X|S)
- (9, 1), (9, 2), (9, 3), (9, 4), (9, 6);-- Elden Ring (PS4, PS5, PC, Xbox Series X|S, Xbox One)
+ (1, 1), (1, 2), (1, 6),                         -- Uncharted 4 (PS4, PS5, PC)
+ (2, 2), (2, 4),                                 -- GTA 6 (PS5, Xbox Series X|S)
+ (3, 2), (3, 4), (3, 6),                         -- Battlefield 6 (PS5, Xbox Series X|S, PC)
+ (4, 2), (4, 4), (4, 5), (4, 6),                 -- Doom Eternal (PS5, Xbox Series X|S, Switch, PC)
+ (5, 2), (5, 4), (5, 6),                         -- Black Myth: Wukong (PS5, Xbox Series X|S, PC)
+ (6, 1), (6, 2), (6, 3), (6, 4), (6, 6),         -- Call of Duty: MW II (PS4, PS5, Xbox One, Xbox Series X|S, PC)
+ (7, 1), (7, 3), (7, 6),                         -- Red Dead Redemption 2 (PS4, Xbox One, PC)
+ (8, 2), (8, 4), (8, 6),                         -- Dead Space (PS5, Xbox Series X|S, PC)
+ (9, 1), (9, 2), (9, 3), (9, 4), (9, 6);         -- Elden Ring (PS4, PS5, Xbox One, Xbox Series X|S, PC)
 
 -- ----- empleados de ejemplo -----
 INSERT INTO empleado (dni, nombre, tipo_contrato, telefono) VALUES
@@ -260,19 +266,21 @@ INSERT INTO compra (id_usuario, id_videojuego, fecha_compra, precio_pagado) VALU
  (2, 5, '2026-06-05', 59.99), -- Nerea_99 compra Black Myth: Wukong
  (3, 5, '2026-06-07', 59.99); -- PatataAritz compra Black Myth: Wukong
 
--- ----- reseñas de ejemplo -----
+-- ----- reseñas de ejemplo (puntuacion entre 1.0 y 5.0) -----
 INSERT INTO resena (id_usuario, id_videojuego, puntuacion, comentario, fecha_resena) VALUES
- (1, 2, 10.0, 'El mapa mas grande y detallado que ha hecho Rockstar, se nota cada euro invertido.', '2026-06-10'),
- (2, 5, 9.0,  'Lo compre por recomendacion de um amigo, esta demasiado bien.', '2026-06-12');
- 
- -- ====================================================================
+ (1, 2, 5.0, 'El mapa mas grande y detallado que ha hecho Rockstar, se nota cada euro invertido.', '2026-06-10'),
+ (2, 5, 4.5, 'Lo compre por recomendacion de un amigo, esta demasiado bien.', '2026-06-12');
+
+
+-- ====================================================================
 -- creación de usuarios de mysql y asignación de privilegios
 -- ====================================================================
 
--- 1. crear los usuarios (con contraseña segura para localhost o acceso remoto)
-create user 'dara_admin'@'localhost' identified by 'AdminSeguro_123!';
-create user 'dara_empleado'@'localhost' identified by 'EmpleadoPass_456!';
-create user 'dara_cliente'@'localhost' identified by 'ClienteWeb_789!';
+-- 1. crear los usuarios (if not exists evita error si el script se
+--    ejecuta varias veces, ya que los usuarios no se borran con el drop database)
+create user if not exists 'dara_admin'@'localhost' identified by 'AdminSeguro_123!';
+create user if not exists 'dara_empleado'@'localhost' identified by 'EmpleadoPass_456!';
+create user if not exists 'dara_cliente'@'localhost' identified by 'ClienteWeb_789!';
 
 
 -- ====================================================================
@@ -285,12 +293,14 @@ grant all privileges on dara.* to 'dara_admin'@'localhost';
 
 
 -- ----- rol 2: empleado / gestor (gestión operativa) -----
--- puede ver, insertar y modificar videojuegos, empresas, plataformas, empleados y ver compras/reseñas, 
--- pero no puede borrar la base de datos ni alterar la estructura de las tablas (drop/alter).
+-- puede ver, insertar y modificar videojuegos, empresas, plataformas, etc.,
+-- pero no puede borrar datos ni alterar la estructura de las tablas (delete/drop/alter).
 grant select, insert, update on dara.videojuego to 'dara_empleado'@'localhost';
 grant select, insert, update on dara.empresa to 'dara_empleado'@'localhost';
 grant select, insert, update on dara.plataforma to 'dara_empleado'@'localhost';
 grant select, insert, update on dara.genero to 'dara_empleado'@'localhost';
+grant select, insert, update on dara.disponible to 'dara_empleado'@'localhost';
+grant select, insert, update on dara.pertenece to 'dara_empleado'@'localhost';
 grant select, insert, update on dara.compra to 'dara_empleado'@'localhost';
 grant select, insert, update on dara.resena to 'dara_empleado'@'localhost';
 grant select, insert, update on dara.usuario to 'dara_empleado'@'localhost';
@@ -298,12 +308,14 @@ grant select on dara.empleado to 'dara_empleado'@'localhost';
 
 
 -- ----- rol 3: cliente / usuario web (acceso limitado al escaparate y su cuenta) -----
--- solo puede consultar los catálogos (juegos, plataformas, géneros), 
+-- solo puede consultar los catálogos (juegos, plataformas, géneros),
 -- registrarse/actualizar sus datos de usuario y realizar sus propias compras/reseñas.
 grant select on dara.videojuego to 'dara_cliente'@'localhost';
 grant select on dara.plataforma to 'dara_cliente'@'localhost';
 grant select on dara.genero to 'dara_cliente'@'localhost';
 grant select on dara.empresa to 'dara_cliente'@'localhost';
+grant select on dara.disponible to 'dara_cliente'@'localhost';
+grant select on dara.pertenece to 'dara_cliente'@'localhost';
 
 -- permisos sobre su propio perfil, compras y reseñas
 grant select, insert, update on dara.usuario to 'dara_cliente'@'localhost';
