@@ -34,11 +34,11 @@ En este repositorio se encuentra el código fuente y los recursos utilizados par
 
 |  Integrante |  Rol |
 |---|---|
-|  **Daymer** | Desarrollo y diseño |
+|  **Ekain** | Desarrollo y diseño |
 |  **Aimar** | Desarrollo y contenido |
 |  **Ander** | Desarrollo y contenido |
 
->  **DARA es un proyecto desarrollado conjuntamente por Daymer, Aimar y Ander.**
+>  **DARA es un proyecto desarrollado conjuntamente por Ekain, Aimar y Ander.**
 
 ---
 
